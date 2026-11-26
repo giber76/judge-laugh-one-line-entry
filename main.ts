@@ -8,7 +8,7 @@
 // /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // The line: a confession about houseplants that escalates twice. The
@@ -34,5 +34,13 @@ if (LINE.trim() !== LINE || LINE.includes('\n')) {
 const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 mkdirSync(outDir, { recursive: true });
 writeFileSync(join(outDir, 'entry.txt'), LINE, 'utf8');
+
+// Read the file back and confirm it round-trips exactly: a partial
+// write or an encoding slip would otherwise reach the gate silently
+// and score 0, while a loud failure here costs nothing.
+const written = readFileSync(join(outDir, 'entry.txt'), 'utf8');
+if (written !== LINE) {
+  throw new Error('entry.txt does not match the line after writing');
+}
 
 console.log(`wrote ${join(outDir, 'entry.txt')} (${[...LINE].length} characters)`);
